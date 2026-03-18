@@ -1,19 +1,40 @@
 {
   "name": "aku-ai",
   "version": "1.0.0",
-  "description": "Aku AI microservice for the Aku platform.",
-  "main": "src/index.js",
+  "description": "Aku AI – REST API microservice for AI/ML inference and automation",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "jest"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --runInBand --forceExit",
+    "lint": "eslint src tests --ext .js"
   },
+  "keywords": [
+    "ai",
+    "ml",
+    "inference",
+    "rest-api",
+    "microservice"
+  ],
+  "author": "UMAR ABUBAKAR",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "joi": "^17.13.1"
   },
   "devDependencies": {
-    "jest": "^29.0.0",
-    "supertest": "^6.3.0",
-    "nodemon": "^3.0.0"
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ]
   }
 }
