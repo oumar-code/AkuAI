@@ -1,173 +1,156 @@
-# AkuAI
+# AkuAI — Shared Inference Service
 
-Aku AI is a microservice in the Aku platform ecosystem. It provides AI-powered features, inference, and automation for users and other services via a scalable Node.js REST API.
+AkuAI is the **centralised inference layer** for the entire Aku Platform.  
+All other services (AkuLearn, AkuMentor, AkuAssess, AkuSkills, etc.) call AkuAI — it does **not** expose domain models from those services.
 
-## Features
+- **Runtime:** Python 3.11 / FastAPI  
+- **Port (default):** `8004`  
+- **API prefix:** `/api/v1`
 
-- **REST API** for AI/ML tasks (inference, text generation, classification, summarization)
-- **Scalable Node.js backend** built with Express
-- **Input validation** via Joi schemas
-- **Rate limiting** to protect against abuse
-- **Structured error handling** with consistent JSON responses
+---
 
-## Getting Started
+## Directory layout
 
-### Prerequisites
-
-- Node.js ≥ 18
-- npm ≥ 9
-
-### Installation
-
-```bash
-npm install
+```
+AkuAI/
+├── app/
+│   ├── routers/
+│   │   ├── inference.py   # POST /inference, /text/generate, /text/classify,
+│   │   │                  #      /text/summarize, /embeddings
+│   │   └── models.py      # GET  /models, POST /models/gemma/infer
+│   ├── schemas/
+│   │   └── inference.py   # Pydantic v2 request/response models
+│   └── services/
+│       └── inference.py   # InferenceService (async, stub → real torch impl)
+├── .env.example
+├── requirements-extra.txt
+└── README.md
 ```
 
-### Configuration
+---
 
-Copy `.env.example` to `.env` and adjust as needed:
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/v1/inference` | Generic inference against any registered model |
+| `POST` | `/api/v1/text/generate` | LLM text generation |
+| `POST` | `/api/v1/text/classify` | Zero-shot text classification |
+| `POST` | `/api/v1/text/summarize` | Document summarisation |
+| `POST` | `/api/v1/embeddings` | Vector embeddings for semantic search |
+| `GET`  | `/api/v1/models` | List available models and their capabilities |
+| `POST` | `/api/v1/models/gemma/infer` | Gemma relay for Edge Hub containers (< 4 KB payload) |
+
+---
+
+## Quickstart
 
 ```bash
+# 1 — Copy and configure environment
 cp .env.example .env
-```
 
-| Variable               | Default | Description                              |
-| ---------------------- | ------- | ---------------------------------------- |
-| `PORT`                 | `3000`  | Port the HTTP server listens on          |
-| `NODE_ENV`             | `development` | Runtime environment               |
-| `RATE_LIMIT_WINDOW_MS` | `60000` | Rate-limit window in milliseconds        |
-| `RATE_LIMIT_MAX`       | `100`   | Max requests per window per IP           |
+# 2 — Install platform requirements (from repo root)
+pip install -r requirements.txt
 
-### Running
+# 3 — Install AkuAI ML dependencies
+pip install -r requirements-extra.txt
 
-```bash
-# Production
-npm start
-
-# Development (with auto-reload)
-npm run dev
-```
-
-## API Reference
-
-### Health Check
-
-```
-GET /health
-```
-
-Response:
-```json
-{ "status": "ok", "service": "aku-ai", "timestamp": "2026-01-01T00:00:00.000Z" }
+# 4 — Run the service
+uvicorn app.main:app --reload --port 8004
 ```
 
 ---
 
-### List Models
+## `main.py` integration snippet
 
-```
-GET /api/models
-```
+Create `app/main.py` in the AkuAI service root and wire in the routers:
 
-Response:
-```json
-{
-  "status": "ok",
-  "count": 3,
-  "models": [
-    { "id": "text-gen-v1", "name": "Text Generation v1", "type": "text-generation", ... },
-    { "id": "text-classify-v1", "name": "Text Classification v1", "type": "text-classification", ... },
-    { "id": "summarizer-v1", "name": "Summarizer v1", "type": "summarization", ... }
-  ]
-}
-```
+```python
+from contextlib import asynccontextmanager
 
----
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-### Generic Inference
+from app.routers import inference, models
+from app.services.inference import inference_service
 
-```
-POST /api/inference
-Content-Type: application/json
-```
 
-Body:
-```json
-{ "modelId": "text-gen-v1", "input": { "prompt": "Explain machine learning." } }
-```
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: load models into memory
+    await inference_service.startup()
+    yield
+    # Shutdown: release model resources
+    await inference_service.shutdown()
 
-Response:
-```json
-{ "status": "ok", "result": { "model": "text-gen-v1", "generatedText": "...", "tokensUsed": 42 } }
-```
 
----
+app = FastAPI(
+    title="AkuAI",
+    description="Shared inference layer for the Aku Platform.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
-### Text Generation
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # tighten via CORS_ORIGINS env var in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-```
-POST /api/text/generate
-Content-Type: application/json
-```
+app.include_router(inference.router)
+app.include_router(models.router)
 
-Body:
-```json
-{ "prompt": "Tell me about AI.", "options": { "maxTokens": 200 } }
+
+@app.get("/health", tags=["ops"])
+async def health() -> dict:
+    return {"status": "ok", "service": "AkuAI"}
 ```
 
 ---
 
-### Text Classification
+## Service dependency
 
-```
-POST /api/text/classify
-Content-Type: application/json
-```
+Add AkuAI to other services using standard `httpx` async calls:
 
-Body:
-```json
-{ "text": "This product is amazing!" }
-```
+```python
+import httpx
 
-Response:
-```json
-{
-  "status": "ok",
-  "result": {
-    "model": "text-classify-v1",
-    "label": "positive",
-    "confidence": 0.7312,
-    "scores": [...]
-  }
-}
+AKUAI_BASE = "http://akuai:8004"
+
+async def generate(prompt: str) -> str:
+    async with httpx.AsyncClient() as client:
+        r = await client.post(
+            f"{AKUAI_BASE}/api/v1/text/generate",
+            json={"prompt": prompt, "model": "gemma-2b", "max_tokens": 256},
+            timeout=30.0,
+        )
+        r.raise_for_status()
+        return r.json()["text"]
 ```
 
 ---
 
-### Text Summarization
+## Implementing real model loading
 
-```
-POST /api/text/summarize
-Content-Type: application/json
-```
+Replace the stub `TODO` sections in `app/services/inference.py`:
 
-Body:
-```json
-{ "text": "Long article text...", "options": { "maxLength": 120 } }
-```
+1. **Text generation / Gemma** — use `llama_cpp.Llama` pointed at `GEMMA_GGUF_PATH`.
+2. **Summarisation / Classification** — use `transformers.pipeline(...)` with the model IDs already declared in the stub catalogue.
+3. **Embeddings** — use `sentence_transformers.SentenceTransformer(model_id).encode(...)`.
 
-## Testing
+Load all pipelines inside `InferenceService.startup()` and store them as instance attributes.  
+The `get_inference_service` dependency injects the same singleton across all requests.
 
-```bash
-npm test
-```
+---
 
-## Linting
+## Edge Hub notes
 
-```bash
-npm run lint
-```
+The `/api/v1/models/gemma/infer` endpoint is designed for Edge Hub containers  
+that have intermittent or low-bandwidth connectivity:
 
-## License
-
-MIT © UMAR ABUBAKAR
+- Callers **must** include `hub_id` in the request body for response routing.
+- Request + response bodies are capped at **4 KB** (`GEMMA_MAX_PAYLOAD_BYTES`).
+- The `prompt` field is limited to **2 048 characters**.
+- Do **not** add streaming or binary payloads to this endpoint.
