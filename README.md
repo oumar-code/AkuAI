@@ -1,7 +1,9 @@
 # AkuAI — Shared Inference Service
 
-AkuAI is the **centralised inference layer** for the entire Aku Platform.  
-All other services (AkuLearn, AkuMentor, AkuAssess, AkuSkills, etc.) call AkuAI — it does **not** expose domain models from those services.
+![CI](https://github.com/oumar-code/AkuAI/actions/workflows/ci.yml/badge.svg)
+
+
+Aku AI is a microservice in the Aku platform ecosystem. It provides AI-powered features, inference, and automation for users and other services via a scalable Node.js REST API.
 
 - **Runtime:** Python 3.11 / FastAPI  
 - **Port (default):** `8004`  
