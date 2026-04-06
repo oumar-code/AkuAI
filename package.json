@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --runInBand --forceExit",
+    "test": "jest --runInBand --detectOpenHandles",
     "lint": "eslint src tests --ext .js"
   },
   "keywords": [
@@ -32,6 +32,10 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/tests/setupEnv.js"
+    ],
+    "testTimeout": 30000,
     "coverageDirectory": "coverage",
     "collectCoverageFrom": [
       "src/**/*.js"

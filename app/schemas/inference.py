@@ -7,7 +7,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ---------------------------------------------------------------------------
 # Shared enums
 # ---------------------------------------------------------------------------
@@ -25,14 +24,9 @@ class OutputFormat(str, Enum):
     JSON = "json"
     MARKDOWN = "markdown"
 
-
-# ---------------------------------------------------------------------------
-# Generic inference
-# ---------------------------------------------------------------------------
-
-
-class InferenceRequest(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
+    # ---------------------------------------------------------------------------
+    # Generic inference
+    # ---------------------------------------------------------------------------
 
     model: str = Field(..., description="Model identifier, e.g. 'gemma-2b' or 'gpt-4o'")
     prompt: str = Field(..., min_length=1, max_length=32_768)
@@ -41,10 +35,6 @@ class InferenceRequest(BaseModel):
     output_format: OutputFormat = Field(OutputFormat.TEXT)
     max_tokens: int = Field(default=512, ge=1, le=8192)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
-
-
-class InferenceResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
 
     request_id: str
     model: str
@@ -89,7 +79,9 @@ class TextClassifyRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     text: str = Field(..., min_length=1, max_length=16_384)
-    labels: list[str] = Field(..., min_length=2, description="Candidate labels for zero-shot classification")
+    labels: list[str] = Field(
+        ..., min_length=2, description="Candidate labels for zero-shot classification"
+    )
     model: str = Field(default="facebook/bart-large-mnli")
     multi_label: bool = Field(default=False)
 
