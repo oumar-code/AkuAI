@@ -12,7 +12,11 @@ async def get_current_user(
 ) -> dict:
     token = credentials.credentials
     try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(
+            token,
+            settings.jwt_secret_key,
+            algorithms=[settings.jwt_algorithm],
+        )
         return payload
     except JWTError:
         raise HTTPException(

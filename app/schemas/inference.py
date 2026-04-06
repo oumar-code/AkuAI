@@ -30,7 +30,10 @@ class OutputFormat(str, Enum):
 
     model: str = Field(..., description="Model identifier, e.g. 'gemma-2b' or 'gpt-4o'")
     prompt: str = Field(..., min_length=1, max_length=32_768)
-    params: dict[str, Any] = Field(default_factory=dict, description="Model-specific parameters")
+    params: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Model-specific parameters",
+    )
     provider: ModelProvider = Field(ModelProvider.LOCAL)
     output_format: OutputFormat = Field(OutputFormat.TEXT)
     max_tokens: int = Field(default=512, ge=1, le=8192)

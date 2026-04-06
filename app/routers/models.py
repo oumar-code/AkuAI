@@ -35,7 +35,8 @@ async def list_models(
     description=(
         "Lightweight inference endpoint for Edge Hub containers running Gemma locally. "
         "Request and response payloads are intentionally kept under 4 KB. "
-        "Callers must supply their `hub_id` so responses can be routed back correctly."
+        "Callers must supply their `hub_id` so responses can be routed back "
+        "correctly."
     ),
 )
 async def gemma_infer(
