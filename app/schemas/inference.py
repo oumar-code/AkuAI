@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+
 # ---------------------------------------------------------------------------
 # Shared enums
 # ---------------------------------------------------------------------------
@@ -19,16 +20,40 @@ class ModelProvider(str, Enum):
     ANTHROPIC = "anthropic"
 
 
-# Enum for output format only
 class OutputFormat(str, Enum):
     TEXT = "text"
     JSON = "json"
     MARKDOWN = "markdown"
 
 
-# Generic inference request model
+# ---------------------------------------------------------------------------
+# Generic inference
+# ---------------------------------------------------------------------------
 
-# Generic inference response model
+
+class InferenceRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    model: str = Field(..., description="Model identifier, e.g. 'gemma-2b' or 'gpt-4o'")
+    prompt: str = Field(..., min_length=1, max_length=32_768)
+    params: dict[str, Any] = Field(default_factory=dict, description="Model-specific parameters")
+    provider: ModelProvider = Field(ModelProvider.LOCAL)
+    output_format: OutputFormat = Field(OutputFormat.TEXT)
+    max_tokens: int = Field(default=512, ge=1, le=8192)
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+
+
+class InferenceResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    request_id: str
+    model: str
+    output: str
+    provider: ModelProvider
+    tokens_used: int | None = None
+    latency_ms: float | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
 
 # ---------------------------------------------------------------------------
 # Text generation
@@ -64,9 +89,7 @@ class TextClassifyRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     text: str = Field(..., min_length=1, max_length=16_384)
-    labels: list[str] = Field(
-        ..., min_length=2, description="Candidate labels for zero-shot classification"
-    )
+    labels: list[str] = Field(..., min_length=2, description="Candidate labels for zero-shot classification")
     model: str = Field(default="facebook/bart-large-mnli")
     multi_label: bool = Field(default=False)
 
