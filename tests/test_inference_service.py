@@ -27,6 +27,7 @@ async def test_inference_service_stub_methods() -> None:
     assert inference.model == "gemma-2b"
     assert inference.provider == ModelProvider.LOCAL
     assert inference.tokens_used == 2
+    assert "[STUB] Inference response for model='gemma-2b'" in inference.output
 
     generated = await service.generate_text(
         TextGenerateRequest(prompt="generate this", model="gemma-2b", max_tokens=32)
