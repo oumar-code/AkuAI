@@ -24,9 +24,14 @@ class OutputFormat(str, Enum):
     JSON = "json"
     MARKDOWN = "markdown"
 
-    # ---------------------------------------------------------------------------
-    # Generic inference
-    # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Generic inference
+# ---------------------------------------------------------------------------
+
+
+class InferenceRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
 
     model: str = Field(..., description="Model identifier, e.g. 'gemma-2b' or 'gpt-4o'")
     prompt: str = Field(..., min_length=1, max_length=32_768)
@@ -36,6 +41,8 @@ class OutputFormat(str, Enum):
     max_tokens: int = Field(default=512, ge=1, le=8192)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
 
+
+class InferenceResponse(BaseModel):
     request_id: str
     model: str
     output: str
