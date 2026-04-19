@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, status
 
 from app.schemas.inference import (
@@ -30,7 +32,7 @@ router = APIRouter(prefix="/api/v1", tags=["inference"])
 )
 async def run_inference(
     body: InferenceRequest,
-    svc: InferenceService = Depends(get_inference_service),
+    svc: Annotated[InferenceService, Depends(get_inference_service)],
 ) -> InferenceResponse:
     return await svc.run_inference(body)
 
@@ -44,7 +46,7 @@ async def run_inference(
 )
 async def generate_text(
     body: TextGenerateRequest,
-    svc: InferenceService = Depends(get_inference_service),
+    svc: Annotated[InferenceService, Depends(get_inference_service)],
 ) -> TextGenerateResponse:
     return await svc.generate_text(body)
 
@@ -58,7 +60,7 @@ async def generate_text(
 )
 async def classify_text(
     body: TextClassifyRequest,
-    svc: InferenceService = Depends(get_inference_service),
+    svc: Annotated[InferenceService, Depends(get_inference_service)],
 ) -> TextClassifyResponse:
     return await svc.classify_text(body)
 
@@ -72,7 +74,7 @@ async def classify_text(
 )
 async def summarize_text(
     body: TextSummarizeRequest,
-    svc: InferenceService = Depends(get_inference_service),
+    svc: Annotated[InferenceService, Depends(get_inference_service)],
 ) -> TextSummarizeResponse:
     return await svc.summarize_text(body)
 
@@ -86,6 +88,6 @@ async def summarize_text(
 )
 async def get_embeddings(
     body: EmbeddingsRequest,
-    svc: InferenceService = Depends(get_inference_service),
+    svc: Annotated[InferenceService, Depends(get_inference_service)],
 ) -> EmbeddingsResponse:
     return await svc.get_embeddings(body)
