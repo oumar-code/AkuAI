@@ -18,8 +18,8 @@ async def get_current_user(
             algorithms=[settings.jwt_algorithm],
         )
         return payload
-    except JWTError:
+    except JWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-        )
+        ) from err
