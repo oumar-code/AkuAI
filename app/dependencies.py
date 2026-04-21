@@ -5,10 +5,11 @@ from jose import JWTError, jwt
 from app.config import settings
 
 bearer_scheme = HTTPBearer()
+bearer_credentials = Depends(bearer_scheme)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials = bearer_credentials,
 ) -> dict:
     token = credentials.credentials
     try:
@@ -18,8 +19,8 @@ async def get_current_user(
             algorithms=[settings.jwt_algorithm],
         )
         return payload
-    except JWTError:
+    except JWTError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-        )
+        ) from err
