@@ -12,7 +12,6 @@ from app.schemas.inference import (
 from app.services.inference import InferenceService, get_inference_service
 
 router = APIRouter(prefix="/api/v1", tags=["models"])
-inference_service_dependency = Depends(get_inference_service)
 
 
 @router.get(
@@ -23,7 +22,7 @@ inference_service_dependency = Depends(get_inference_service)
     description="Return all models registered with AkuAI, including their capabilities and load status.",
 )
 async def list_models(
-    svc: InferenceService = inference_service_dependency,
+    svc: InferenceService = Depends(get_inference_service),
 ) -> ModelListResponse:
     return await svc.list_models()
 
@@ -41,6 +40,6 @@ async def list_models(
 )
 async def gemma_infer(
     body: GemmaInferRequest,
-    svc: InferenceService = inference_service_dependency,
+    svc: InferenceService = Depends(get_inference_service),
 ) -> GemmaInferResponse:
     return await svc.gemma_infer(body)
